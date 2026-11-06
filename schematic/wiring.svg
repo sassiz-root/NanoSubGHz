@@ -1,0 +1,245 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 1230" width="1400" height="1230">
+  <style>
+    .bg { fill: #fafafa; }
+    .title { font: bold 26px Arial, sans-serif; fill: #1a237e; text-anchor: middle; }
+    .subtitle { font: 13px Arial, sans-serif; fill: #546e7a; text-anchor: middle; }
+    .module { fill: #e1f5fe; stroke: #0277bd; stroke-width: 2; rx: 8; }
+    .module-title { font: bold 14px Arial, sans-serif; fill: #01579b; }
+    .module-note { font: 11px Arial, sans-serif; fill: #4e6b75; }
+    .module-pin { font: 11px monospace; fill: #263238; }
+    .antenna { font: 10px monospace; fill: #c62828; }
+    .nano { fill: #fff8e1; stroke: #f57f17; stroke-width: 3; rx: 10; }
+    .nano-title { font: bold 15px Arial, sans-serif; fill: #e65100; text-anchor: middle; }
+    .nano-sub { font: 11px Arial, sans-serif; fill: #bf360c; text-anchor: middle; }
+    .nano-pin { font: 11px monospace; fill: #212121; }
+    .nano-pin-used { font: 11px monospace; fill: #b71c1c; font-weight: bold; }
+    .nano-pin-l { text-anchor: start; }
+    .nano-pin-r { text-anchor: end; }
+    .wire { fill: none; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+    .w-i2c-sda { stroke: #e91e63; }
+    .w-i2c-scl { stroke: #9c27b0; }
+    .w-spi { stroke: #00897b; }
+    .w-rx { stroke: #1976d2; }
+    .w-tx { stroke: #ef6c00; }
+    .w-btn { stroke: #388e3c; }
+    .w-agc { stroke: #5d4037; stroke-dasharray: 6,3; }
+    .pin-dot { fill: #212121; }
+    .legend-box { fill: #ffffff; stroke: #b0bec5; stroke-width: 1.5; rx: 8; }
+    .legend-title { font: bold 13px Arial, sans-serif; fill: #263238; text-anchor: middle; }
+    .legend-text { font: 12px Arial, sans-serif; fill: #37474f; }
+    .legend-note { font: 10px Arial, sans-serif; fill: #607d8b; }
+    .footer { font: italic 11px Arial, sans-serif; fill: #607d8b; text-anchor: middle; }
+    .crossing { stroke: #fafafa; stroke-width: 6; }
+  </style>
+
+  <!-- Background -->
+  <rect class="bg" width="1400" height="1230"/>
+
+  <!-- Titles -->
+  <text x="700" y="34" class="title">NanoSubGHz — Wiring Diagram</text>
+  <text x="700" y="56" class="subtitle">Arduino Nano • LCD 1602 I2C • SD Card • RX 433/315 MHz • TX 433/315 MHz • 5 Buttons</text>
+
+  <!-- ============ LCD 1602 I2C ============ -->
+  <rect class="module" x="120" y="90" width="380" height="150"/>
+  <text x="140" y="114" class="module-title">LCD 1602 (I2C)</text>
+  <text x="140" y="132" class="module-note">I2C address: 0x27 (alt 0x3F)</text>
+  <text x="140" y="158" class="module-pin">● VCC → 5V</text>
+  <text x="140" y="178" class="module-pin">● GND → GND</text>
+  <text x="140" y="198" class="module-pin">● SDA → A4</text>
+  <text x="140" y="218" class="module-pin">● SCL → A5</text>
+
+  <!-- ============ SD Card Module ============ -->
+  <rect class="module" x="900" y="90" width="380" height="150"/>
+  <text x="920" y="114" class="module-title">SD Card Module (SPI)</text>
+  <text x="920" y="132" class="module-note">FAT16 / FAT32 • ≤32 GB</text>
+  <text x="920" y="158" class="module-pin">● CS   → D10</text>
+  <text x="920" y="178" class="module-pin">● MOSI → D11</text>
+  <text x="920" y="198" class="module-pin">● MISO → D12</text>
+  <text x="920" y="218" class="module-pin">● SCK  → D13</text>
+
+  <!-- ============ Arduino Nano ============ -->
+  <rect class="nano" x="550" y="380" width="300" height="500"/>
+  <text x="700" y="408" class="nano-title">ARDUINO NANO</text>
+  <text x="700" y="424" class="nano-sub">ATmega328P • 16 MHz</text>
+
+  <!-- LEFT pins (0..14, y = 454 + i*28) -->
+  <text x="560" y="458" class="nano-pin-used nano-pin-l">D13</text>
+  <text x="560" y="486" class="nano-pin nano-pin-l">3V3</text>
+  <text x="560" y="514" class="nano-pin nano-pin-l">AREF</text>
+  <text x="560" y="542" class="nano-pin-used nano-pin-l">A0</text>
+  <text x="560" y="570" class="nano-pin-used nano-pin-l">A1</text>
+  <text x="560" y="598" class="nano-pin nano-pin-l">A2</text>
+  <text x="560" y="626" class="nano-pin nano-pin-l">A3</text>
+  <text x="560" y="654" class="nano-pin-used nano-pin-l">A4</text>
+  <text x="560" y="682" class="nano-pin-used nano-pin-l">A5</text>
+  <text x="560" y="710" class="nano-pin-used nano-pin-l">A6</text>
+  <text x="560" y="738" class="nano-pin-used nano-pin-l">A7</text>
+  <text x="560" y="766" class="nano-pin-used nano-pin-l">5V</text>
+  <text x="560" y="794" class="nano-pin nano-pin-l">RST</text>
+  <text x="560" y="822" class="nano-pin-used nano-pin-l">GND</text>
+  <text x="560" y="850" class="nano-pin nano-pin-l">VIN</text>
+
+  <!-- RIGHT pins (0..14, y = 454 + i*28) -->
+  <text x="840" y="458" class="nano-pin-used nano-pin-r">D12</text>
+  <text x="840" y="486" class="nano-pin-used nano-pin-r">D11</text>
+  <text x="840" y="514" class="nano-pin-used nano-pin-r">D10</text>
+  <text x="840" y="542" class="nano-pin-used nano-pin-r">D9</text>
+  <text x="840" y="570" class="nano-pin-used nano-pin-r">D8</text>
+  <text x="840" y="598" class="nano-pin nano-pin-r">D7</text>
+  <text x="840" y="626" class="nano-pin-used nano-pin-r">D6</text>
+  <text x="840" y="654" class="nano-pin-used nano-pin-r">D5</text>
+  <text x="840" y="682" class="nano-pin-used nano-pin-r">D4</text>
+  <text x="840" y="710" class="nano-pin-used nano-pin-r">D3</text>
+  <text x="840" y="738" class="nano-pin-used nano-pin-r">D2</text>
+  <text x="840" y="766" class="nano-pin-used nano-pin-r">GND</text>
+  <text x="840" y="794" class="nano-pin nano-pin-r">RST</text>
+  <text x="840" y="822" class="nano-pin nano-pin-r">RX0</text>
+  <text x="840" y="850" class="nano-pin nano-pin-r">TX1</text>
+
+  <!-- ============ LEFT Side Buttons ============ -->
+  <rect class="module" x="80" y="520" width="150" height="45"/>
+  <text x="155" y="542" class="module-title" text-anchor="middle">SELECT</text>
+  <text x="155" y="558" class="module-pin" text-anchor="middle">→ A0</text>
+
+  <rect class="module" x="80" y="590" width="150" height="45"/>
+  <text x="155" y="612" class="module-title" text-anchor="middle">BACK</text>
+  <text x="155" y="628" class="module-pin" text-anchor="middle">→ A1</text>
+
+  <!-- ============ RIGHT Side Buttons ============ -->
+  <rect class="module" x="1170" y="520" width="150" height="45"/>
+  <text x="1245" y="542" class="module-title" text-anchor="middle">UP</text>
+  <text x="1245" y="558" class="module-pin" text-anchor="middle">→ D8</text>
+
+  <rect class="module" x="1170" y="590" width="150" height="45"/>
+  <text x="1245" y="612" class="module-title" text-anchor="middle">DOWN</text>
+  <text x="1245" y="628" class="module-pin" text-anchor="middle">→ D9</text>
+
+  <rect class="module" x="1170" y="660" width="150" height="45"/>
+  <text x="1245" y="682" class="module-title" text-anchor="middle">LEFT</text>
+  <text x="1245" y="698" class="module-pin" text-anchor="middle">→ D6</text>
+
+  <!-- ============ RX 433 ============ -->
+  <rect class="module" x="100" y="950" width="280" height="150"/>
+  <text x="120" y="976" class="module-title">RX 433 MHz</text>
+  <text x="120" y="998" class="module-pin">● DATA → D2</text>
+  <text x="120" y="1018" class="module-pin">● AGC  → A6 (RXB6)</text>
+  <text x="120" y="1038" class="module-pin">● VCC  → 5V</text>
+  <text x="120" y="1058" class="module-pin">● GND  → GND</text>
+  <text x="120" y="1084" class="antenna">Antenna: 17.3 cm</text>
+
+  <!-- ============ RX 315 ============ -->
+  <rect class="module" x="400" y="950" width="280" height="150"/>
+  <text x="420" y="976" class="module-title">RX 315 MHz</text>
+  <text x="420" y="998" class="module-pin">● DATA → D3</text>
+  <text x="420" y="1018" class="module-pin">● AGC  → A7 (RXB6)</text>
+  <text x="420" y="1038" class="module-pin">● VCC  → 5V</text>
+  <text x="420" y="1058" class="module-pin">● GND  → GND</text>
+  <text x="420" y="1084" class="antenna">Antenna: 23.8 cm</text>
+
+  <!-- ============ TX 433 ============ -->
+  <rect class="module" x="720" y="950" width="280" height="150"/>
+  <text x="740" y="976" class="module-title">TX 433 MHz</text>
+  <text x="740" y="998" class="module-pin">● DATA → D4</text>
+  <text x="740" y="1018" class="module-pin">● VCC  → 5V</text>
+  <text x="740" y="1038" class="module-pin">● GND  → GND</text>
+  <text x="740" y="1084" class="antenna">Antenna: 17.3 cm</text>
+
+  <!-- ============ TX 315 ============ -->
+  <rect class="module" x="1020" y="950" width="280" height="150"/>
+  <text x="1040" y="976" class="module-title">TX 315 MHz</text>
+  <text x="1040" y="998" class="module-pin">● DATA → D5</text>
+  <text x="1040" y="1018" class="module-pin">● VCC  → 5V</text>
+  <text x="1040" y="1038" class="module-pin">● GND  → GND</text>
+  <text x="1040" y="1084" class="antenna">Antenna: 23.8 cm</text>
+
+  <!-- ============ WIRES ============ -->
+
+  <!-- LCD SDA (400,240) → A4 (550,654) -->
+  <path class="wire w-i2c-sda" d="M 400 240 L 400 340 L 520 340 L 520 654 L 550 654"/>
+
+  <!-- LCD SCL (450,240) → A5 (550,682) -->
+  <path class="wire w-i2c-scl" d="M 450 240 L 450 365 L 490 365 L 490 682 L 550 682"/>
+
+  <!-- SD CS (1020,240) → D10 (850,514) -->
+  <path class="wire w-spi" d="M 1020 240 L 1020 514 L 850 514"/>
+
+  <!-- SD MOSI (1080,240) → D11 (850,486) -->
+  <path class="wire w-spi" d="M 1080 240 L 1080 486 L 850 486"/>
+
+  <!-- SD MISO (1140,240) → D12 (850,458) -->
+  <path class="wire w-spi" d="M 1140 240 L 1140 458 L 850 458"/>
+
+  <!-- SD SCK (1200,240) → D13 (550,458) : up and over -->
+  <path class="wire w-spi" d="M 1200 240 L 1200 270 L 340 270 L 340 458 L 550 458"/>
+  <!-- bridge hop over SDA vertical at x=400, y=270 -->
+  <circle class="crossing" cx="400" cy="270" r="4"/>
+
+  <!-- SELECT (230,542) → A0 (550,542) -->
+  <path class="wire w-btn" d="M 230 542 L 550 542"/>
+
+  <!-- BACK (230,612) → A1 (550,570) -->
+  <path class="wire w-btn" d="M 230 612 L 400 612 L 400 570 L 550 570"/>
+
+  <!-- UP (1170,542) → D8 (850,570) -->
+  <path class="wire w-btn" d="M 1170 542 L 1000 542 L 1000 570 L 850 570"/>
+
+  <!-- DOWN (1170,612) → D9 (850,542) -->
+  <path class="wire w-btn" d="M 1170 612 L 1000 612 L 1000 542 L 850 542"/>
+
+  <!-- LEFT (1170,682) → D6 (850,626) -->
+  <path class="wire w-btn" d="M 1170 682 L 1000 682 L 1000 626 L 850 626"/>
+
+  <!-- RX433 DATA (380,950) → D2 (850,738) -->
+  <path class="wire w-rx" d="M 380 950 L 380 918 L 1110 918 L 1110 738 L 850 738"/>
+
+  <!-- RX433 AGC (250,950) → A6 (550,710) -->
+  <path class="wire w-agc" d="M 250 950 L 250 932 L 520 932 L 520 710 L 550 710"/>
+
+  <!-- RX315 DATA (560,950) → D3 (850,710) -->
+  <path class="wire w-rx" d="M 560 950 L 560 908 L 1140 908 L 1140 710 L 850 710"/>
+
+  <!-- RX315 AGC (480,950) → A7 (550,738) -->
+  <path class="wire w-agc" d="M 480 950 L 480 928 L 535 928 L 535 738 L 550 738"/>
+
+  <!-- TX433 DATA (860,950) → D4 (850,682) -->
+  <path class="wire w-tx" d="M 860 950 L 860 682 L 850 682"/>
+
+  <!-- TX315 DATA (1170,950) → D5 (850,654) -->
+  <path class="wire w-tx" d="M 1170 950 L 1170 886 L 1120 886 L 1120 654 L 850 654"/>
+
+  <!-- ============ LEGEND ============ -->
+  <rect class="legend-box" x="20" y="20" width="240" height="290"/>
+  <text x="140" y="44" class="legend-title">LEGEND</text>
+
+  <line x1="35" y1="64" x2="70" y2="64" class="wire w-i2c-sda"/>
+  <text x="80" y="68" class="legend-text">I2C SDA</text>
+
+  <line x1="35" y1="89" x2="70" y2="89" class="wire w-i2c-scl"/>
+  <text x="80" y="93" class="legend-text">I2C SCL</text>
+
+  <line x1="35" y1="114" x2="70" y2="114" class="wire w-spi"/>
+  <text x="80" y="118" class="legend-text">SPI (SD Card)</text>
+
+  <line x1="35" y1="139" x2="70" y2="139" class="wire w-rx"/>
+  <text x="80" y="143" class="legend-text">RX DATA</text>
+
+  <line x1="35" y1="164" x2="70" y2="164" class="wire w-tx"/>
+  <text x="80" y="168" class="legend-text">TX DATA</text>
+
+  <line x1="35" y1="189" x2="70" y2="189" class="wire w-btn"/>
+  <text x="80" y="193" class="legend-text">Button</text>
+
+  <line x1="35" y1="214" x2="70" y2="214" class="wire w-agc"/>
+  <text x="80" y="218" class="legend-text">AGC (RXB6 only)</text>
+
+  <circle cx="52" cy="236" r="4" class="pin-dot"/>
+  <text x="80" y="240" class="legend-text">Pin / wire hop</text>
+
+  <text x="30" y="270" class="legend-note">VCC &amp; GND wires omitted —</text>
+  <text x="30" y="285" class="legend-note">connect all modules to 5V &amp; GND rails</text>
+  <text x="30" y="300" class="legend-note">Red bold pins on Nano = used</text>
+
+  <!-- Footer -->
+  <text x="700" y="1210" class="footer">NanoSubGHz by Sassiz.Root — Educational use only — See DISCLAIMER.md</text>
+</svg>

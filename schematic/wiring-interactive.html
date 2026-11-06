@@ -1,0 +1,921 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NanoSubGHz — Interactive Wiring</title>
+<style>
+  :root {
+    --bg: #f5f5f5; --panel-bg: #ffffff; --border: #e0e0e0;
+    --text: #212121; --text-muted: #757575;
+    --accent: #1976d2; --accent-dark: #0d47a1;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; font-family: system-ui, -apple-system, sans-serif;
+    background: var(--bg); color: var(--text); overflow: hidden; }
+  body { display: flex; flex-direction: column; }
+
+  /* ===== Header ===== */
+  header {
+    background: var(--panel-bg); border-bottom: 1px solid var(--border);
+    padding: 8px 16px; display: flex; align-items: center; gap: 16px;
+    flex-wrap: wrap; flex-shrink: 0;
+  }
+  .brand { font-weight: 700; font-size: 17px; color: var(--accent-dark); white-space: nowrap; }
+  .brand small { font-weight: 400; font-size: 11px; color: var(--text-muted); margin-left: 8px; }
+  .controls { display: flex; gap: 6px; align-items: center; margin-left: auto; flex-wrap: wrap; }
+  .seg { display: inline-flex; border: 1px solid var(--border); border-radius: 6px; overflow: hidden; }
+  .seg button {
+    padding: 5px 12px; background: transparent; border: none; cursor: pointer;
+    font-size: 12px; color: var(--text); font-family: inherit;
+  }
+  .seg button.active { background: var(--accent); color: white; }
+  .seg button:hover:not(.active) { background: #f0f0f0; }
+  .btn-zoom {
+    min-width: 30px; height: 28px; padding: 0 8px; border: 1px solid var(--border);
+    border-radius: 6px; background: var(--panel-bg); cursor: pointer;
+    font-size: 14px; font-weight: 600;
+  }
+  .btn-zoom:hover { background: #f0f0f0; }
+
+  /* ===== Main layout ===== */
+  .main { flex: 1; display: grid; grid-template-columns: 260px 1fr 320px; overflow: hidden; }
+  .sidebar {
+    background: var(--panel-bg); border-right: 1px solid var(--border);
+    overflow-y: auto; padding: 12px;
+  }
+  .sidebar:last-child { border-right: none; border-left: 1px solid var(--border); }
+  .sidebar h3 {
+    font-size: 12px; text-transform: uppercase; color: var(--text-muted);
+    margin-bottom: 10px; letter-spacing: 0.5px; font-weight: 700;
+  }
+  .component-item {
+    display: flex; align-items: center; gap: 8px; padding: 6px;
+    border-radius: 4px; cursor: pointer; font-size: 13px;
+    transition: background 0.15s;
+  }
+  .component-item:hover { background: #f0f0f0; }
+  .component-item.selected { background: #e3f2fd; }
+  .component-item input[type=checkbox] { cursor: pointer; }
+  .swatch {
+    width: 12px; height: 12px; border-radius: 3px; flex-shrink: 0;
+    border: 1px solid rgba(0,0,0,0.2);
+  }
+  .divider { height: 1px; background: var(--border); margin: 12px 0; }
+  .action-btn {
+    width: 100%; padding: 7px; font-size: 12px; font-family: inherit;
+    border: 1px solid var(--border); border-radius: 4px;
+    background: var(--panel-bg); cursor: pointer; margin-top: 6px;
+  }
+  .action-btn:hover { background: #f0f0f0; }
+
+  /* ===== Canvas ===== */
+  .canvas-wrap {
+    position: relative; overflow: hidden; background: #fafafa;
+    display: flex; align-items: center; justify-content: center;
+  }
+  #diagram {
+    width: 100%; height: 100%; transition: transform 0.35s ease;
+    transform-origin: center center;
+  }
+  #svg { width: 100%; height: 100%; }
+  .comp { cursor: move; }
+  .comp:active { cursor: grabbing; }
+  .comp:hover .comp-body { filter: brightness(0.96); }
+  .comp.selected .comp-body { stroke-width: 4 !important; }
+  .comp-body { transition: stroke-width 0.2s; }
+  .wire { fill: none; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; pointer-events: none; }
+  .pin-dot { fill: #c62828; stroke: white; stroke-width: 1.5; }
+  .pin-label { font-size: 10px; font-family: monospace; fill: #c62828; font-weight: 600; pointer-events: none; }
+
+  /* ===== Footer ===== */
+  footer {
+    background: var(--panel-bg); border-top: 1px solid var(--border);
+    padding: 10px 16px; display: flex; align-items: center; gap: 12px;
+    flex-shrink: 0;
+  }
+  footer label { font-size: 13px; display: flex; align-items: center; gap: 8px; flex: 1; }
+  footer input[type=range] { flex: 1; max-width: 400px; }
+  #explodeVal { min-width: 42px; text-align: right; font-family: monospace; font-size: 12px; }
+
+  /* ===== Info panel ===== */
+  .info-empty { color: var(--text-muted); font-size: 13px; text-align: center; padding: 40px 20px; line-height: 1.6; }
+  .info-title { font-size: 15px; font-weight: 700; margin-bottom: 12px; color: var(--accent-dark); }
+  .info-section { margin-bottom: 14px; }
+  .info-section h4 {
+    font-size: 10px; text-transform: uppercase; color: var(--text-muted);
+    margin-bottom: 6px; letter-spacing: 0.5px; font-weight: 700;
+  }
+  .info-section p, .info-section li { font-size: 12px; line-height: 1.6; color: #424242; }
+  .info-section ul { padding-left: 16px; }
+  .pin-list { display: flex; flex-wrap: wrap; gap: 4px; }
+  .pin-chip {
+    padding: 2px 8px; border-radius: 10px; font-size: 11px;
+    background: #e3f2fd; color: #1565c0; font-family: monospace; font-weight: 600;
+  }
+
+  /* ===== RTL support ===== */
+  [dir="rtl"] .component-item { flex-direction: row-reverse; }
+  [dir="rtl"] .sidebar { border-right: none; border-left: 1px solid var(--border); }
+  [dir="rtl"] .sidebar:last-child { border-left: none; border-right: 1px solid var(--border); }
+  [dir="rtl"] .controls { margin-left: 0; margin-right: auto; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">NanoSubGHz <small id="brandSub">Interactive Wiring</small></div>
+  <div class="controls">
+    <div class="seg" id="langSeg">
+      <button data-lang="en" class="active">EN</button>
+      <button data-lang="fa">فا</button>
+    </div>
+    <div class="seg" id="viewSeg">
+      <button data-view="schematic" class="active" data-i18n="schematic">Schematic</button>
+      <button data-view="realistic" data-i18n="realistic">Realistic</button>
+    </div>
+    <div class="seg" id="projSeg">
+      <button data-proj="2d" class="active">2D</button>
+      <button data-proj="3d">3D</button>
+    </div>
+    <button class="btn-zoom" id="zoomOut" title="Zoom Out">−</button>
+    <button class="btn-zoom" id="zoomReset" title="Reset Zoom">1:1</button>
+    <button class="btn-zoom" id="zoomIn" title="Zoom In">+</button>
+    <button class="btn-zoom" id="resetAll" title="Reset All">⟲</button>
+  </div>
+</header>
+
+<div class="main">
+  <aside class="sidebar" id="leftPanel">
+    <h3 data-i18n="components">Components</h3>
+    <ul id="componentList" style="list-style:none;"></ul>
+    <div class="divider"></div>
+    <label class="component-item" style="font-weight:600; cursor:pointer;">
+      <input type="checkbox" id="wiresToggle" checked>
+      <span data-i18n="showWires">Show Wiring</span>
+    </label>
+    <button class="action-btn" id="showAllWires" data-i18n="showAll">Show All Wires</button>
+    <button class="action-btn" id="resetPositions" data-i18n="resetPositions">Reset Positions</button>
+  </aside>
+
+  <main class="canvas-wrap" id="canvasWrap">
+    <div id="diagram">
+      <svg id="svg" viewBox="0 0 1400 1230" preserveAspectRatio="xMidYMid meet">
+        <defs>
+          <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+            <feDropShadow dx="2" dy="2" stdDeviation="3" flood-opacity="0.18"/>
+          </filter>
+        </defs>
+        <g id="wireLayer"></g>
+        <g id="compLayer"></g>
+      </svg>
+    </div>
+  </main>
+
+  <aside class="sidebar" id="rightPanel">
+    <div class="info-empty" id="infoEmpty" data-i18n="clickHint">
+      Click any component to see its details.
+    </div>
+    <div id="infoContent" style="display:none;"></div>
+  </aside>
+</div>
+
+<footer>
+  <label>
+    <span data-i18n="explode">Explosion</span>
+    <input type="range" id="explodeSlider" min="0" max="100" value="0">
+    <span id="explodeVal">0%</span>
+  </label>
+</footer>
+
+<script>
+'use strict';
+
+// ==================== i18n ====================
+const I18N = {
+  en: {
+    schematic: 'Schematic', realistic: 'Realistic',
+    components: 'Components', showWires: 'Show Wiring',
+    showAll: 'Show All Wires', resetPositions: 'Reset Positions',
+    clickHint: 'Click any component to see its details.',
+    explode: 'Explosion', function: 'Function',
+    specs: 'Specifications', pins: 'Pins',
+    description: 'Description', wires: 'Connected Wires',
+    comp_names: {
+      lcd: 'LCD 1602 (I2C)', sd: 'SD Card', nano: 'Arduino Nano',
+      select: 'Button SELECT', back: 'Button BACK',
+      up: 'Button UP', down: 'Button DOWN', left: 'Button LEFT',
+      rx433: 'RX 433 MHz', rx315: 'RX 315 MHz',
+      tx433: 'TX 433 MHz', tx315: 'TX 315 MHz'
+    }
+  },
+  fa: {
+    schematic: 'شماتیک', realistic: 'واقع‌گرایانه',
+    components: 'قطعات', showWires: 'نمایش سیم‌کشی',
+    showAll: 'نمایش همه سیم‌ها', resetPositions: 'بازنشانی موقعیت‌ها',
+    clickHint: 'برای دیدن جزئیات، روی هر قطعه کلیک کنید.',
+    explode: 'انفجار قطعات', function: 'عملکرد',
+    specs: 'مشخصات', pins: 'پایه‌ها',
+    description: 'توضیحات', wires: 'سیم‌های متصل',
+    comp_names: {
+      lcd: 'نمایشگر LCD 1602', sd: 'ماژول کارت SD', nano: 'آردوینو نانو',
+      select: 'دکمه SELECT', back: 'دکمه BACK',
+      up: 'دکمه UP', down: 'دکمه DOWN', left: 'دکمه LEFT',
+      rx433: 'گیرنده ۴۳۳ مگاهرتز', rx315: 'گیرنده ۳۱۵ مگاهرتز',
+      tx433: 'فرستنده ۴۳۳ مگاهرتز', tx315: 'فرستنده ۳۱۵ مگاهرتز'
+    }
+  }
+};
+
+// ==================== COMPONENT DATA ====================
+const COMPONENTS = {
+  lcd: {
+    x: 120, y: 90, w: 380, h: 150,
+    color: '#e1f5fe', border: '#0277bd', realisticColor: '#1a237e',
+    explode: [-0.7, -0.9],
+    pins: {
+      SDA: { x: 380, y: 80, side: 'R' },
+      SCL: { x: 380, y: 120, side: 'R' }
+    },
+    info: {
+      en: { func: '16x2 character LCD with I2C backpack. Displays menus and code info.',
+        specs: ['16 columns × 2 rows', 'I2C address: 0x27 (alt 0x3F)', '5V power', 'SDA→A4, SCL→A5'],
+        desc: 'Uses only 2 wires thanks to the PCF8574 I2C expander on the back. Contrast adjustable via trimpot.' },
+      fa: { func: 'نمایشگر کاراکتری ۱۶×۲ با پشت‌بورد I2C برای نمایش منوها و اطلاعات کدها.',
+        specs: ['۱۶ ستون × ۲ خط', 'آدرس I2C: 0x27 (جایگزین 0x3F)', 'تغذیه ۵ ولت', 'SDA→A4، SCL→A5'],
+        desc: 'به لطف تراشه PCF8574 روی پشت‌بورد، فقط با ۲ سیم متصل می‌شود. کنتراست با پتانسیومتر قابل تنظیم است.' }
+    }
+  },
+  sd: {
+    x: 900, y: 90, w: 380, h: 150,
+    color: '#e8f5e9', border: '#2e7d32', realisticColor: '#1b5e20',
+    explode: [0.7, -0.9],
+    pins: {
+      CS:   { x: 100, y: 130, side: 'B' },
+      MOSI: { x: 160, y: 130, side: 'B' },
+      MISO: { x: 220, y: 130, side: 'B' },
+      SCK:  { x: 280, y: 130, side: 'B' }
+    },
+    info: {
+      en: { func: 'Reads/writes CSV log files with captured RF codes.',
+        specs: ['SPI interface', 'FAT16/FAT32', '≤32 GB cards', '3.3V logic (5V tolerant)'],
+        desc: 'Every captured code is appended to /codes_433.csv or /codes_315.csv. Has onboard 3.3V regulator and level shifter.' },
+      fa: { func: 'خواندن و نوشتن فایل‌های CSV حاوی کدهای دریافت‌شده.',
+        specs: ['رابط SPI', 'FAT16/FAT32', 'کارت تا ۳۲ گیگابایت', 'منطق ۳.۳ ولت'],
+        desc: 'هر کد دریافت‌شده به فایل codes_433.csv یا codes_315.csv اضافه می‌شود. رگولاتور ۳.۳ ولت و مبدل سطح داخلی دارد.' }
+    }
+  },
+  nano: {
+    x: 550, y: 380, w: 300, h: 500,
+    color: '#fff8e1', border: '#f57f17', realisticColor: '#0d47a1',
+    explode: [0, 0], isMain: true,
+    pins: {
+      D13: { x: 0, y: 78, side: 'L' },
+      A0:  { x: 0, y: 162, side: 'L' },
+      A1:  { x: 0, y: 190, side: 'L' },
+      A4:  { x: 0, y: 274, side: 'L' },
+      A5:  { x: 0, y: 302, side: 'L' },
+      A6:  { x: 0, y: 330, side: 'L' },
+      A7:  { x: 0, y: 358, side: 'L' },
+      D12: { x: 300, y: 78, side: 'R' },
+      D11: { x: 300, y: 106, side: 'R' },
+      D10: { x: 300, y: 134, side: 'R' },
+      D9:  { x: 300, y: 162, side: 'R' },
+      D8:  { x: 300, y: 190, side: 'R' },
+      D6:  { x: 300, y: 246, side: 'R' },
+      D5:  { x: 300, y: 274, side: 'R' },
+      D4:  { x: 300, y: 302, side: 'R' },
+      D3:  { x: 300, y: 330, side: 'R' },
+      D2:  { x: 300, y: 358, side: 'R' }
+    },
+    info: {
+      en: { func: 'Main microcontroller. Runs firmware, controls all modules, processes user input.',
+        specs: ['ATmega328P @ 16 MHz', '32 KB flash, 2 KB SRAM, 1 KB EEPROM', '14 digital I/O, 8 analog in', '5V logic'],
+        desc: 'The brain of the project. Manages interrupts from RX modules, drives SPI for SD, I2C for LCD, and reads 5 push buttons with internal pull-ups.' },
+      fa: { func: 'میکروکنترلر اصلی. فریمور را اجرا، ماژول‌ها را کنترل و ورودی کاربر را پردازش می‌کند.',
+        specs: ['ATmega328P @ ۱۶ مگاهرتز', '۳۲KB فلش، ۲KB SRAM، ۱KB EEPROM', '۱۴ دیجیتال، ۸ آنالوگ', 'منطق ۵ ولت'],
+        desc: 'مغز پروژه. وقفه‌های گیرنده‌ها را مدیریت، SPI را برای SD، I2C را برای LCD و ۵ دکمه فشاری را با pull-up داخلی می‌خواند.' }
+    }
+  },
+  select: {
+    x: 80, y: 520, w: 150, h: 45,
+    color: '#c8e6c9', border: '#388e3c', realisticColor: '#2e7d32',
+    explode: [-0.9, -0.1],
+    pins: { P: { x: 150, y: 22, side: 'R' } },
+    info: {
+      en: { func: 'SELECT button. Confirms actions, enters menus, starts operations.',
+        specs: ['Tactile push button 6×6 mm', 'Connected to A0', 'Internal pull-up', 'Active LOW'],
+        desc: 'Primary "OK/Enter" button. Also used inside detail view to trigger code replay.' },
+      fa: { func: 'دکمه تأیید. اعمال را تأیید و به منوها وارد می‌شود.',
+        specs: ['دکمه تاکتیل ۶×۶ میلی‌متر', 'متصل به A0', 'pull-up داخلی', 'فعال با LOW'],
+        desc: 'دکمه اصلی «تأیید/ورود». در نمای جزئیات برای بازپخش کد نیز استفاده می‌شود.' }
+    }
+  },
+  back: {
+    x: 80, y: 590, w: 150, h: 45,
+    color: '#c8e6c9', border: '#388e3c', realisticColor: '#2e7d32',
+    explode: [-0.9, 0.1],
+    pins: { P: { x: 150, y: 22, side: 'R' } },
+    info: {
+      en: { func: 'BACK button. Cancels or deletes the selected code in detail view.',
+        specs: ['Push button', 'Connected to A1', 'INPUT_PULLUP', 'Active LOW'],
+        desc: 'Returns without saving. In code detail view, deletes the selected code (be careful).' },
+      fa: { func: 'دکمه بازگشت. لغو می‌کند یا در نمای جزئیات کد را حذف می‌کند.',
+        specs: ['دکمه فشاری', 'متصل به A1', 'INPUT_PULLUP', 'فعال با LOW'],
+        desc: 'بدون ذخیره برمی‌گردد. در نمای جزئیات کد، کد انتخاب‌شده را حذف می‌کند (احتیاط).' }
+    }
+  },
+  up: {
+    x: 1170, y: 520, w: 150, h: 45,
+    color: '#c8e6c9', border: '#388e3c', realisticColor: '#2e7d32',
+    explode: [0.9, -0.4],
+    pins: { P: { x: 0, y: 22, side: 'L' } },
+    info: {
+      en: { func: 'UP button. Moves menu selection up / decreases value.',
+        specs: ['Push button', 'Connected to D8', 'INPUT_PULLUP', 'Active LOW'],
+        desc: 'Navigates up in menus and lists. Also toggles frequency selection.' },
+      fa: { func: 'دکمه بالا. انتخاب منو را به بالا / مقدار را کاهش می‌دهد.',
+        specs: ['دکمه فشاری', 'متصل به D8', 'INPUT_PULLUP', 'فعال با LOW'],
+        desc: 'در منوها و لیست‌ها به بالا حرکت می‌کند. همچنین انتخاب فرکانس را جابه‌جا می‌کند.' }
+    }
+  },
+  down: {
+    x: 1170, y: 590, w: 150, h: 45,
+    color: '#c8e6c9', border: '#388e3c', realisticColor: '#2e7d32',
+    explode: [0.9, 0],
+    pins: { P: { x: 0, y: 22, side: 'L' } },
+    info: {
+      en: { func: 'DOWN button. Moves menu selection down / increases value.',
+        specs: ['Push button', 'Connected to D9', 'INPUT_PULLUP', 'Active LOW'],
+        desc: 'Navigates down in menus and lists. Also toggles frequency selection.' },
+      fa: { func: 'دکمه پایین. انتخاب منو را به پایین / مقدار را افزایش می‌دهد.',
+        specs: ['دکمه فشاری', 'متصل به D9', 'INPUT_PULLUP', 'فعال با LOW'],
+        desc: 'در منوها و لیست‌ها به پایین حرکت می‌کند. همچنین انتخاب فرکانس را جابه‌جا می‌کند.' }
+    }
+  },
+  left: {
+    x: 1170, y: 660, w: 150, h: 45,
+    color: '#c8e6c9', border: '#388e3c', realisticColor: '#2e7d32',
+    explode: [0.9, 0.4],
+    pins: { P: { x: 0, y: 22, side: 'L' } },
+    info: {
+      en: { func: 'LEFT button. Exits current screen back to main menu.',
+        specs: ['Push button', 'Connected to D6', 'INPUT_PULLUP', 'Active LOW'],
+        desc: 'Universal "escape" button. Stops sniffing, jamming and brute-force. Returns to main menu.' },
+      fa: { func: 'دکمه چپ. از صفحه فعلی به منوی اصلی برمی‌گردد.',
+        specs: ['دکمه فشاری', 'متصل به D6', 'INPUT_PULLUP', 'فعال با LOW'],
+        desc: 'دکمه «فرار» عمومی. شنود، Jam و Brute-Force را متوقف می‌کند و به منوی اصلی می‌رود.' }
+    }
+  },
+  rx433: {
+    x: 100, y: 950, w: 280, h: 150,
+    color: '#e3f2fd', border: '#1565c0', realisticColor: '#0d47a1',
+    explode: [-0.7, 0.9],
+    pins: {
+      DATA: { x: 280, y: 0, side: 'R' },
+      AGC:  { x: 0, y: 0, side: 'L' }
+    },
+    info: {
+      en: { func: 'Receives ASK/OOK signals on 433.92 MHz and demodulates them to digital.',
+        specs: ['433.92 MHz', 'Supply: 4.5–5.5 V', 'Sensitivity: ~ -105 dBm (RXB6)', 'Data: up to 4.8 kbps', 'AGC output for RSSI'],
+        desc: 'Superheterodyne receiver (recommended RXB6). Antenna: 17.3 cm (λ/4). AGC pin gives analog signal strength for RSSI 0–5 display.' },
+      fa: { func: 'دریافت سیگنال‌های ASK/OOK در ۴۳۳.۹۲ مگاهرتز و تبدیل به دیجیتال.',
+        specs: ['۴۳۳.۹۲ مگاهرتز', 'تغذیه: ۴.۵ تا ۵.۵ ولت', 'حساسیت: ~ -۱۰۵ dBm (RXB6)', 'نرخ داده: تا ۴.۸ kbps', 'خروجی AGC برای RSSI'],
+        desc: 'گیرنده سوپرهتروداین (پیشنهاد RXB6). آنتن: ۱۷.۳ سانتی‌متر (λ/4). پین AGC سطح آنالوگ سیگنال را برای RSSI ۰ تا ۵ می‌دهد.' }
+    }
+  },
+  rx315: {
+    x: 400, y: 950, w: 280, h: 150,
+    color: '#e3f2fd', border: '#1565c0', realisticColor: '#0d47a1',
+    explode: [-0.2, 0.9],
+    pins: {
+      DATA: { x: 280, y: 0, side: 'R' },
+      AGC:  { x: 0, y: 0, side: 'L' }
+    },
+    info: {
+      en: { func: 'Receives ASK/OOK signals on 315 MHz.',
+        specs: ['315 MHz', 'Supply: 4.5–5.5 V', 'Sensitivity: ~ -105 dBm (RXB6)', 'Data: up to 4.8 kbps', 'AGC output for RSSI'],
+        desc: 'Superheterodyne receiver for the 315 MHz band (common in North America and some Asian remotes). Antenna: 23.8 cm (λ/4).' },
+      fa: { func: 'دریافت سیگنال‌های ASK/OOK در ۳۱۵ مگاهرتز.',
+        specs: ['۳۱۵ مگاهرتز', 'تغذیه: ۴.۵ تا ۵.۵ ولت', 'حساسیت: ~ -۱۰۵ dBm (RXB6)', 'نرخ داده: تا ۴.۸ kbps', 'خروجی AGC برای RSSI'],
+        desc: 'گیرنده سوپرهتروداین برای باند ۳۱۵ مگاهرتز (رایج در آمریکای شمالی). آنتن: ۲۳.۸ سانتی‌متر (λ/4).' }
+    }
+  },
+  tx433: {
+    x: 720, y: 950, w: 280, h: 150,
+    color: '#fff3e0', border: '#ef6c00', realisticColor: '#bf360c',
+    explode: [0.2, 0.9],
+    pins: { DATA: { x: 140, y: 0, side: 'T' } },
+    info: {
+      en: { func: 'Transmits OOK-modulated codes on 433.92 MHz.',
+        specs: ['433.92 MHz', 'Supply: 3–12 V (5V used)', 'Output: ~ +10 dBm', 'Data: up to 10 kbps', 'FS1000A module'],
+        desc: 'Cheap OOK transmitter. Antenna: 17.3 cm (λ/4). Output power is limited (~10 mW) — effective range is short without a proper antenna.' },
+      fa: { func: 'ارسال کدهای مدوله‌شده OOK روی ۴۳۳.۹۲ مگاهرتز.',
+        specs: ['۴۳۳.۹۲ مگاهرتز', 'تغذیه: ۳ تا ۱۲ ولت (۵ ولت)', 'خروجی: ~ +۱۰ dBm', 'نرخ داده: تا ۱۰ kbps', 'ماژول FS1000A'],
+        desc: 'فرستنده ارزان OOK. آنتن: ۱۷.۳ سانتی‌متر (λ/4). قدرت خروجی محدود (~۱۰ میلی‌وات) است — برد مؤثر کوتاه است.' }
+    }
+  },
+  tx315: {
+    x: 1020, y: 950, w: 280, h: 150,
+    color: '#fff3e0', border: '#ef6c00', realisticColor: '#bf360c',
+    explode: [0.7, 0.9],
+    pins: { DATA: { x: 150, y: 0, side: 'T' } },
+    info: {
+      en: { func: 'Transmits OOK-modulated codes on 315 MHz.',
+        specs: ['315 MHz', 'Supply: 3–12 V (5V used)', 'Output: ~ +10 dBm', 'Data: up to 10 kbps', 'FS1000A module'],
+        desc: 'Same board as the 433 transmitter but tuned for 315 MHz. Antenna: 23.8 cm (λ/4).' },
+      fa: { func: 'ارسال کدهای مدوله‌شده OOK روی ۳۱۵ مگاهرتز.',
+        specs: ['۳۱۵ مگاهرتز', 'تغذیه: ۳ تا ۱۲ ولت (۵ ولت)', 'خروجی: ~ +۱۰ dBm', 'نرخ داده: تا ۱۰ kbps', 'ماژول FS1000A'],
+        desc: 'همان برد فرستنده ۴۳۳ اما برای ۳۱۵ مگاهرتز تنظیم شده. آنتن: ۲۳.۸ سانتی‌متر (λ/4).' }
+    }
+  }
+};
+
+// ==================== WIRES ====================
+const WIRES = [
+  { id: 'w1',  from: { comp: 'lcd', pin: 'SDA' },   to: { comp: 'nano', pin: 'A4' },  color: '#e91e63', label: 'I2C SDA' },
+  { id: 'w2',  from: { comp: 'lcd', pin: 'SCL' },   to: { comp: 'nano', pin: 'A5' },  color: '#9c27b0', label: 'I2C SCL' },
+  { id: 'w3',  from: { comp: 'sd', pin: 'CS' },     to: { comp: 'nano', pin: 'D10' }, color: '#00897b', label: 'SPI CS' },
+  { id: 'w4',  from: { comp: 'sd', pin: 'MOSI' },   to: { comp: 'nano', pin: 'D11' }, color: '#00897b', label: 'SPI MOSI' },
+  { id: 'w5',  from: { comp: 'sd', pin: 'MISO' },   to: { comp: 'nano', pin: 'D12' }, color: '#00897b', label: 'SPI MISO' },
+  { id: 'w6',  from: { comp: 'sd', pin: 'SCK' },    to: { comp: 'nano', pin: 'D13' }, color: '#00897b', label: 'SPI SCK' },
+  { id: 'w7',  from: { comp: 'select', pin: 'P' },  to: { comp: 'nano', pin: 'A0' },  color: '#388e3c', label: 'SELECT' },
+  { id: 'w8',  from: { comp: 'back', pin: 'P' },    to: { comp: 'nano', pin: 'A1' },  color: '#388e3c', label: 'BACK' },
+  { id: 'w9',  from: { comp: 'up', pin: 'P' },      to: { comp: 'nano', pin: 'D8' },  color: '#388e3c', label: 'UP' },
+  { id: 'w10', from: { comp: 'down', pin: 'P' },    to: { comp: 'nano', pin: 'D9' },  color: '#388e3c', label: 'DOWN' },
+  { id: 'w11', from: { comp: 'left', pin: 'P' },    to: { comp: 'nano', pin: 'D6' },  color: '#388e3c', label: 'LEFT' },
+  { id: 'w12', from: { comp: 'rx433', pin: 'DATA' },to: { comp: 'nano', pin: 'D2' },  color: '#1976d2', label: 'RX433 DATA' },
+  { id: 'w13', from: { comp: 'rx433', pin: 'AGC' }, to: { comp: 'nano', pin: 'A6' },  color: '#5d4037', label: 'RX433 AGC', dashed: true },
+  { id: 'w14', from: { comp: 'rx315', pin: 'DATA' },to: { comp: 'nano', pin: 'D3' },  color: '#1976d2', label: 'RX315 DATA' },
+  { id: 'w15', from: { comp: 'rx315', pin: 'AGC' }, to: { comp: 'nano', pin: 'A7' },  color: '#5d4037', label: 'RX315 AGC', dashed: true },
+  { id: 'w16', from: { comp: 'tx433', pin: 'DATA' },to: { comp: 'nano', pin: 'D4' },  color: '#ef6c00', label: 'TX433 DATA' },
+  { id: 'w17', from: { comp: 'tx315', pin: 'DATA' },to: { comp: 'nano', pin: 'D5' },  color: '#ef6c00', label: 'TX315 DATA' }
+];
+
+// ==================== STATE ====================
+const state = {
+  lang: 'en', view: 'schematic', proj: '2d',
+  zoom: 1, explode: 0,
+  selected: null,
+  visible: {}, positions: {},
+  wiresVisible: true
+};
+Object.keys(COMPONENTS).forEach(id => {
+  state.visible[id] = true;
+  state.positions[id] = { dx: 0, dy: 0 };
+});
+
+// ==================== HELPERS ====================
+const NS = 'http://www.w3.org/2000/svg';
+const svg = document.getElementById('svg');
+const wireLayer = document.getElementById('wireLayer');
+const compLayer = document.getElementById('compLayer');
+
+function getExplodeOffset(compId) {
+  const c = COMPONENTS[compId];
+  if (!c.explode) return { x: 0, y: 0 };
+  const f = state.explode / 100 * 220;
+  return { x: c.explode[0] * f, y: c.explode[1] * f };
+}
+
+function pinAbs(compId, pinName) {
+  const c = COMPONENTS[compId];
+  const p = c.pins[pinName];
+  const pos = state.positions[compId];
+  const ex = getExplodeOffset(compId);
+  return {
+    x: c.x + p.x + pos.dx + ex.x,
+    y: c.y + p.y + pos.dy + ex.y
+  };
+}
+
+function computeWirePath(w) {
+  const a = pinAbs(w.from.comp, w.from.pin);
+  const b = pinAbs(w.to.comp, w.to.pin);
+  const midY = (a.y + b.y) / 2;
+  if (Math.abs(b.x - a.x) < 20) return `M ${a.x} ${a.y} L ${b.x} ${b.y}`;
+  return `M ${a.x} ${a.y} L ${a.x} ${midY} L ${b.x} ${midY} L ${b.x} ${b.y}`;
+}
+
+function clientToSvg(cx, cy) {
+  try {
+    const pt = svg.createSVGPoint();
+    pt.x = cx; pt.y = cy;
+    const m = svg.getScreenCTM();
+    if (!m) return { x: cx, y: cy };
+    const p = pt.matrixTransform(m.inverse());
+    return { x: p.x, y: p.y };
+  } catch (e) { return { x: cx, y: cy }; }
+}
+
+// ==================== VIEW ====================
+function applyView() {
+  const d = document.getElementById('diagram');
+  d.style.transform = state.proj === '3d'
+    ? 'perspective(2000px) rotateX(18deg) rotateY(-12deg)'
+    : '';
+  const baseW = 1400, baseH = 1230;
+  const extra = state.explode / 100 * 300;
+  const totalW = (baseW + extra * 2) / state.zoom;
+  const totalH = (baseH + extra * 2) / state.zoom;
+  const x = baseW / 2 - totalW / 2;
+  const y = baseH / 2 - totalH / 2;
+  svg.setAttribute('viewBox', `${x} ${y} ${totalW} ${totalH}`);
+}
+
+// ==================== RENDER ====================
+function render() {
+  wireLayer.innerHTML = '';
+  compLayer.innerHTML = '';
+
+  // Wires
+  if (state.wiresVisible && state.explode < 75) {
+    const wireOpacity = Math.max(0, 1 - state.explode / 70);
+    WIRES.forEach(w => {
+      if (!state.visible[w.from.comp] || !state.visible[w.to.comp]) return;
+      if (state.selected && w.from.comp !== state.selected && w.to.comp !== state.selected) return;
+      const p = document.createElementNS(NS, 'path');
+      p.setAttribute('d', computeWirePath(w));
+      p.setAttribute('class', 'wire');
+      p.setAttribute('stroke', w.color);
+      if (w.dashed) p.setAttribute('stroke-dasharray', '6,3');
+      if (state.selected && (w.from.comp === state.selected || w.to.comp === state.selected)) {
+        p.setAttribute('stroke-width', '3.5');
+      }
+      if (state.explode > 0) p.setAttribute('opacity', String(wireOpacity));
+      wireLayer.appendChild(p);
+    });
+  }
+
+  // Components
+  Object.keys(COMPONENTS).forEach(id => {
+    if (!state.visible[id]) return;
+    const c = COMPONENTS[id];
+    const pos = state.positions[id];
+    const ex = getExplodeOffset(id);
+    const x = c.x + pos.dx + ex.x;
+    const y = c.y + pos.dy + ex.y;
+
+    const g = document.createElementNS(NS, 'g');
+    g.setAttribute('class', 'comp' + (state.selected === id ? ' selected' : ''));
+    g.setAttribute('data-id', id);
+
+    // Body
+    const body = document.createElementNS(NS, 'rect');
+    body.setAttribute('x', x); body.setAttribute('y', y);
+    body.setAttribute('width', c.w); body.setAttribute('height', c.h);
+    body.setAttribute('rx', 8);
+    body.setAttribute('fill', state.view === 'realistic' ? c.realisticColor : c.color);
+    body.setAttribute('stroke', c.border);
+    body.setAttribute('stroke-width', state.view === 'realistic' ? '1.5' : '2.5');
+    body.setAttribute('class', 'comp-body');
+    body.setAttribute('filter', 'url(#shadow)');
+    g.appendChild(body);
+
+    // Title
+    const title = document.createElementNS(NS, 'text');
+    title.setAttribute('x', x + 14);
+    title.setAttribute('y', y + 22);
+    title.setAttribute('font-size', '13');
+    title.setAttribute('font-weight', '700');
+    title.setAttribute('fill', state.view === 'realistic' ? '#ffffff' : c.border);
+    title.setAttribute('font-family', 'system-ui, sans-serif');
+    title.setAttribute('pointer-events', 'none');
+    title.textContent = I18N[state.lang].comp_names[id];
+    g.appendChild(title);
+
+    // Pins
+    Object.entries(c.pins).forEach(([pinName, pin]) => {
+      const px = x + pin.x;
+      const py = y + pin.y;
+      const dot = document.createElementNS(NS, 'circle');
+      dot.setAttribute('cx', px); dot.setAttribute('cy', py);
+      dot.setAttribute('r', state.view === 'realistic' ? '3' : '4.5');
+      if (state.view === 'realistic') {
+        dot.setAttribute('fill', '#ffd700');
+        dot.setAttribute('stroke', '#000');
+        dot.setAttribute('stroke-width', '0.5');
+      } else {
+        dot.setAttribute('class', 'pin-dot');
+      }
+      dot.setAttribute('pointer-events', 'none');
+      g.appendChild(dot);
+
+      if (state.view === 'schematic') {
+        const lbl = document.createElementNS(NS, 'text');
+        const isRight = pin.x > c.w / 2;
+        lbl.setAttribute('x', px + (isRight ? 8 : -8));
+        lbl.setAttribute('y', py - 6);
+        lbl.setAttribute('class', 'pin-label');
+        lbl.setAttribute('text-anchor', isRight ? 'start' : 'end');
+        lbl.textContent = pinName;
+        g.appendChild(lbl);
+      }
+    });
+
+    // Realistic extras
+    if (state.view === 'realistic') addRealisticDetails(g, c, x, y, id);
+
+    compLayer.appendChild(g);
+  });
+}
+
+function addRealisticDetails(g, c, x, y, id) {
+  if (id === 'lcd') {
+    const s = document.createElementNS(NS, 'rect');
+    s.setAttribute('x', x + 60); s.setAttribute('y', y + 38);
+    s.setAttribute('width', c.w - 100); s.setAttribute('height', 62);
+    s.setAttribute('fill', '#4caf50'); s.setAttribute('rx', 3);
+    s.setAttribute('pointer-events', 'none');
+    g.appendChild(s);
+    const t = document.createElementNS(NS, 'text');
+    t.setAttribute('x', x + c.w/2 + 5); t.setAttribute('y', y + 78);
+    t.setAttribute('fill', '#000'); t.setAttribute('font-size', '12');
+    t.setAttribute('font-family', 'monospace'); t.setAttribute('text-anchor', 'middle');
+    t.textContent = 'NanoSubGhz';
+    t.setAttribute('pointer-events', 'none');
+    g.appendChild(t);
+  }
+  if (id === 'sd') {
+    const slot = document.createElementNS(NS, 'rect');
+    slot.setAttribute('x', x + 40); slot.setAttribute('y', y + 48);
+    slot.setAttribute('width', 130); slot.setAttribute('height', 55);
+    slot.setAttribute('fill', '#424242'); slot.setAttribute('rx', 3);
+    slot.setAttribute('pointer-events', 'none');
+    g.appendChild(slot);
+    const led = document.createElementNS(NS, 'circle');
+    led.setAttribute('cx', x + 230); led.setAttribute('cy', y + 75);
+    led.setAttribute('r', 5); led.setAttribute('fill', '#ff5252');
+    led.setAttribute('pointer-events', 'none');
+    g.appendChild(led);
+  }
+  if (id === 'nano') {
+    const chip = document.createElementNS(NS, 'rect');
+    chip.setAttribute('x', x + c.w/2 - 42); chip.setAttribute('y', y + c.h/2 - 50);
+    chip.setAttribute('width', 84); chip.setAttribute('height', 100);
+    chip.setAttribute('fill', '#212121'); chip.setAttribute('rx', 4);
+    chip.setAttribute('pointer-events', 'none');
+    g.appendChild(chip);
+    const usb = document.createElementNS(NS, 'rect');
+    usb.setAttribute('x', x + c.w/2 - 22); usb.setAttribute('y', y - 10);
+    usb.setAttribute('width', 44); usb.setAttribute('height', 22);
+    usb.setAttribute('fill', '#bdbdbd'); usb.setAttribute('rx', 3);
+    usb.setAttribute('pointer-events', 'none');
+    g.appendChild(usb);
+  }
+  if (['select','back','up','down','left'].includes(id)) {
+    const outer = document.createElementNS(NS, 'circle');
+    outer.setAttribute('cx', x + c.w/2); outer.setAttribute('cy', y + c.h/2 + 6);
+    outer.setAttribute('r', 11); outer.setAttribute('fill', '#424242');
+    outer.setAttribute('stroke', '#212121'); outer.setAttribute('stroke-width', '1.5');
+    outer.setAttribute('pointer-events', 'none');
+    g.appendChild(outer);
+    const inner = document.createElementNS(NS, 'circle');
+    inner.setAttribute('cx', x + c.w/2 - 2); inner.setAttribute('cy', y + c.h/2 + 4);
+    inner.setAttribute('r', 7); inner.setAttribute('fill', '#bdbdbd');
+    inner.setAttribute('pointer-events', 'none');
+    g.appendChild(inner);
+  }
+  if (id.startsWith('rx') || id.startsWith('tx')) {
+    const ant = document.createElementNS(NS, 'line');
+    ant.setAttribute('x1', x + 30); ant.setAttribute('y1', y + 35);
+    ant.setAttribute('x2', x + 30); ant.setAttribute('y2', y + 85);
+    ant.setAttribute('stroke', '#ffd700'); ant.setAttribute('stroke-width', '3');
+    ant.setAttribute('stroke-linecap', 'round');
+    ant.setAttribute('pointer-events', 'none');
+    g.appendChild(ant);
+  }
+}
+
+// ==================== INFO PANEL ====================
+function renderInfoPanel() {
+  const panel = document.getElementById('infoContent');
+  const empty = document.getElementById('infoEmpty');
+  if (!state.selected) {
+    panel.style.display = 'none';
+    empty.style.display = 'block';
+    return;
+  }
+  panel.style.display = 'block';
+  empty.style.display = 'none';
+
+  const c = COMPONENTS[state.selected];
+  const info = c.info[state.lang];
+  const t = I18N[state.lang];
+  const name = t.comp_names[state.selected];
+
+  let html = `<div class="info-title">${name}</div>`;
+  html += `<div class="info-section"><h4>${t.function}</h4><p>${info.func}</p></div>`;
+  html += `<div class="info-section"><h4>${t.specs}</h4><ul>${info.specs.map(s => `<li>${s}</li>`).join('')}</ul></div>`;
+  html += `<div class="info-section"><h4>${t.pins}</h4><div class="pin-list">${Object.keys(c.pins).map(p => `<span class="pin-chip">${p}</span>`).join('')}</div></div>`;
+  html += `<div class="info-section"><h4>${t.description}</h4><p>${info.desc}</p></div>`;
+
+  const connected = WIRES.filter(w => w.from.comp === state.selected || w.to.comp === state.selected);
+  if (connected.length) {
+    html += `<div class="info-section"><h4>${t.wires}</h4><ul>${connected.map(w => {
+      const from = I18N[state.lang].comp_names[w.from.comp];
+      const to = I18N[state.lang].comp_names[w.to.comp];
+      return `<li><b>${w.label}</b>: ${from}.${w.from.pin} → ${to}.${w.to.pin}</li>`;
+    }).join('')}</ul></div>`;
+  }
+  panel.innerHTML = html;
+}
+
+// ==================== SIDEBAR ====================
+function buildComponentList() {
+  const list = document.getElementById('componentList');
+  list.innerHTML = '';
+  Object.keys(COMPONENTS).forEach(id => {
+    const c = COMPONENTS[id];
+    const li = document.createElement('li');
+    const item = document.createElement('div');
+    item.className = 'component-item' + (state.selected === id ? ' selected' : '');
+    item.dataset.id = id;
+    item.innerHTML = `
+      <input type="checkbox" ${state.visible[id] ? 'checked' : ''} data-toggle="${id}">
+      <span class="swatch" style="background:${c.color}; border-color:${c.border}"></span>
+      <span class="comp-name">${I18N[state.lang].comp_names[id]}</span>
+    `;
+    item.querySelector('input').addEventListener('change', e => {
+      state.visible[id] = e.target.checked;
+      render();
+    });
+    item.addEventListener('click', e => {
+      if (e.target.tagName === 'INPUT') return;
+      selectComponent(id);
+    });
+    li.appendChild(item);
+    list.appendChild(li);
+  });
+}
+
+function updateListLabels() {
+  document.querySelectorAll('#componentList .comp-name').forEach(el => {
+    const id = el.closest('.component-item').dataset.id;
+    el.textContent = I18N[state.lang].comp_names[id];
+  });
+  document.querySelectorAll('#componentList .component-item').forEach(el => {
+    el.classList.toggle('selected', el.dataset.id === state.selected);
+  });
+}
+
+// ==================== LANGUAGE ====================
+function applyLanguage() {
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.getAttribute('data-i18n');
+    if (I18N[state.lang][key]) el.textContent = I18N[state.lang][key];
+  });
+  document.documentElement.lang = state.lang;
+  document.documentElement.dir = state.lang === 'fa' ? 'rtl' : 'ltr';
+  document.getElementById('brandSub').textContent = state.lang === 'fa' ? 'سیم‌کشی تعاملی' : 'Interactive Wiring';
+  updateListLabels();
+  renderInfoPanel();
+  render();
+}
+
+// ==================== SELECTION ====================
+function selectComponent(id) {
+  state.selected = (state.selected === id) ? null : id;
+  updateListLabels();
+  renderInfoPanel();
+  render();
+}
+
+// ==================== DRAG ====================
+let dragState = null;
+let lastDragEndTime = 0;
+
+compLayer.addEventListener('mousedown', e => {
+  if (e.button !== 0) return;
+  const g = e.target.closest('.comp');
+  if (!g) return;
+  const id = g.dataset.id;
+  dragState = {
+    id,
+    startX: e.clientX, startY: e.clientY,
+    origDx: state.positions[id].dx,
+    origDy: state.positions[id].dy,
+    moved: false
+  };
+  document.body.style.userSelect = 'none';
+  e.stopPropagation();
+  e.preventDefault();
+});
+
+document.addEventListener('mousemove', e => {
+  if (!dragState) return;
+  const startSvg = clientToSvg(dragState.startX, dragState.startY);
+  const currSvg = clientToSvg(e.clientX, e.clientY);
+  const dx = currSvg.x - startSvg.x;
+  const dy = currSvg.y - startSvg.y;
+  if (Math.abs(dx) > 2 || Math.abs(dy) > 2) dragState.moved = true;
+  state.positions[dragState.id].dx = dragState.origDx + dx;
+  state.positions[dragState.id].dy = dragState.origDy + dy;
+  render();
+});
+
+document.addEventListener('mouseup', () => {
+  if (!dragState) return;
+  if (dragState.moved) lastDragEndTime = Date.now();
+  else selectComponent(dragState.id);
+  dragState = null;
+  document.body.style.userSelect = '';
+});
+
+// Background click = deselect
+svg.addEventListener('click', e => {
+  if (e.target === svg && Date.now() - lastDragEndTime > 120) {
+    state.selected = null;
+    updateListLabels();
+    renderInfoPanel();
+    render();
+  }
+});
+
+// ==================== UI BINDINGS ====================
+document.getElementById('langSeg').addEventListener('click', e => {
+  if (e.target.tagName !== 'BUTTON') return;
+  state.lang = e.target.dataset.lang;
+  document.querySelectorAll('#langSeg button').forEach(b => b.classList.toggle('active', b === e.target));
+  applyLanguage();
+});
+
+document.getElementById('viewSeg').addEventListener('click', e => {
+  if (e.target.tagName !== 'BUTTON') return;
+  state.view = e.target.dataset.view;
+  document.querySelectorAll('#viewSeg button').forEach(b => b.classList.toggle('active', b === e.target));
+  render();
+});
+
+document.getElementById('projSeg').addEventListener('click', e => {
+  if (e.target.tagName !== 'BUTTON') return;
+  state.proj = e.target.dataset.proj;
+  document.querySelectorAll('#projSeg button').forEach(b => b.classList.toggle('active', b === e.target));
+  applyView();
+});
+
+document.getElementById('zoomIn').addEventListener('click', () => {
+  state.zoom = Math.min(3.5, state.zoom * 1.25);
+  applyView();
+});
+document.getElementById('zoomOut').addEventListener('click', () => {
+  state.zoom = Math.max(0.25, state.zoom / 1.25);
+  applyView();
+});
+document.getElementById('zoomReset').addEventListener('click', () => {
+  state.zoom = 1;
+  applyView();
+});
+document.getElementById('resetAll').addEventListener('click', () => {
+  state.zoom = 1; state.explode = 0; state.selected = null; state.proj = '2d';
+  Object.keys(state.positions).forEach(id => state.positions[id] = { dx: 0, dy: 0 });
+  Object.keys(state.visible).forEach(id => state.visible[id] = true);
+  document.querySelectorAll('#componentList input[data-toggle]').forEach(cb => cb.checked = true);
+  document.querySelectorAll('#projSeg button').forEach(b => b.classList.toggle('active', b.dataset.proj === '2d'));
+  document.getElementById('explodeSlider').value = 0;
+  document.getElementById('explodeVal').textContent = '0%';
+  applyView();
+  updateListLabels();
+  renderInfoPanel();
+  render();
+});
+
+document.getElementById('wiresToggle').addEventListener('change', e => {
+  state.wiresVisible = e.target.checked;
+  render();
+});
+
+document.getElementById('showAllWires').addEventListener('click', () => {
+  state.selected = null;
+  state.wiresVisible = true;
+  document.getElementById('wiresToggle').checked = true;
+  Object.keys(state.visible).forEach(id => {
+    state.visible[id] = true;
+    const cb = document.querySelector(`#componentList input[data-toggle="${id}"]`);
+    if (cb) cb.checked = true;
+  });
+  updateListLabels();
+  renderInfoPanel();
+  render();
+});
+
+document.getElementById('resetPositions').addEventListener('click', () => {
+  Object.keys(state.positions).forEach(id => state.positions[id] = { dx: 0, dy: 0 });
+  render();
+});
+
+document.getElementById('explodeSlider').addEventListener('input', e => {
+  state.explode = +e.target.value;
+  document.getElementById('explodeVal').textContent = state.explode + '%';
+  applyView();
+  render();
+});
+
+// ==================== INIT ====================
+buildComponentList();
+applyLanguage();
+applyView();
+render();
+</script>
+</body>
+</html>
