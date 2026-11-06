@@ -250,6 +250,22 @@ Before submitting a PR:
 
 ---
 
+## 🎨 Interactive Wiring Diagram
+
+Open [`schematic/wiring-interactive.html`](schematic/wiring-interactive.html) 
+in any modern browser — no server or internet required. Features:
+
+- 🌐 Bilingual (EN / فارسی)
+- 🎨 Schematic & Realistic views
+- 📐 2D & 3D projections
+- 💥 Explosion view with slider
+- 🔍 Zoom in/out
+- 🖱️ Drag components
+- 🔌 Per-component wire filtering
+- 📋 Full specs panel
+
+---
+
 ## 📸 Screenshots
 
 > *(Add your own photos of the breadboard build and LCD menus here)*
